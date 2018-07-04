@@ -1,0 +1,100 @@
+/* @file CustomKeypad.pde
+|| @version 1.0
+|| @author Alexander Brevig
+|| @contact alexanderbrevig@gmail.com
+||
+|| @description
+|| | Demonstrates changing the keypad size and key values.
+|| #
+*/
+#include "TM1637.h"
+#include <Keypad.h>
+#include <Wire.h> 
+
+#define CLK 12//pins definitions for TM1637 and can be changed to other ports
+#define DIO 13
+TM1637 tm1637(CLK,DIO);
+
+
+#define Password_Lenght 6 // Give enough room for six chars + NULL char
+char Data[Password_Lenght]; // 6 is the number of chars it can hold + the null char = 7
+char Master[Password_Lenght] = "1234#"; 
+byte data_count = 0, master_count = 0;
+bool Pass_is_good;
+bool Hight;
+char customKey;
+
+
+const byte ROWS = 4; //four rows
+const byte COLS = 4; //four columns
+//define the cymbols on the buttons of the keypads
+char hexaKeys[ROWS][COLS] = {
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
+};
+byte rowPins[ROWS] = {5, 4, 3, 2}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {9, 8, 7, 6}; //connect to the column pinouts of the keypad
+
+//initialize an instance of class NewKeypad
+Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
+
+void setup(){
+  Serial.begin(9600);
+  tm1637.init();
+  tm1637.set(BRIGHT_TYPICAL);//BRIGHT_TYPICAL = 2,BRIGHT_DARKEST = 0,BRIGHTEST = 7;
+
+  pinMode(11, OUTPUT);
+}
+  
+void loop(){
+  char customKey = customKeypad.getKey();
+  
+  if (customKey){
+    Serial.println(customKey);
+    
+  }
+
+  if (customKey) // makes sure a key is actually pressed, equal to (customKey != NO_KEY)
+  {
+    Data[data_count] = customKey; // store char into data array
+    data_count++; // increment data array by 1 to store new char, also keep track of the number of chars entered
+    
+    tm1637.display(data_count-1,customKey-48);
+  }
+
+  if(data_count == Password_Lenght-1) // if the array index is equal to the number of expected chars, compare data to master
+  {
+    if(!strcmp(Data, Master)) // equal to (strcmp(Data, Master) == 0)
+    {
+      Serial.println("Good");
+      digitalWrite(11, HIGH);
+      
+      if (Hight)
+      {
+       digitalWrite(11, LOW); 
+       Hight = false ;
+      }
+      else
+      {
+        Hight = true;  
+      }
+    }  
+    else
+    {
+      Serial.println("false");
+      digitalWrite(11, LOW);
+    }
+
+    tm1637.display(0,"-");
+    tm1637.display(1,"-");  
+    tm1637.display(2,"-");
+    tm1637.display(3,"-");
+    delay(1000);// added 1 second delay to make sure the password is completely shown on screen before it gets cleared.
+    clearData();   
+  }
+}
+
+void clearData()
+{
