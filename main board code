@@ -1,0 +1,71 @@
+int lightPin = A0;  //define a pin for Photo resistor
+bool alarm = false;
+
+//button
+const int buttonPin = 11;
+//button state
+int buttonState = 0;
+
+
+#include <Adafruit_NeoPixel.h>
+#include "WS2812_Definitions.h"
+#define PIN 4
+#define LED_COUNT 5
+
+// Create an instance of the Adafruit_NeoPixel class called "leds".
+// That'll be what we refer to from here on...
+Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800);
+
+
+void setup()
+{
+    Serial.begin(9600);  //Begin serial communcation
+    
+    // initialize the pushbutton pin as an input:
+    pinMode(buttonPin, INPUT);
+
+//    pinMode(8, OUTPUT);
+
+  leds.begin();  // Call this to start up the LED strip.
+  leds.show();   // ...but the LEDs don't actually update until you call this.
+
+}
+
+void loop()
+{
+//    Serial.println(analogRead(lightPin)); //Write the value of the photoresistor to the serial monitor.
+//    delay(5); //short delay for faster response to light.
+
+    // read the state of the pushbutton value:
+    buttonState = digitalRead(buttonPin);
+
+    if (!alarm && buttonState == LOW)
+    {
+        leds.setPixelColor(0, 0xFFFFFF);
+        leds.show();
+    }
+    else if(alarm && buttonState == LOW)
+    {
+        leds.setPixelColor(0, 0xFF0000);
+        leds.show();
+    }
+    else if(buttonState == HIGH && !alarm)
+    {
+        leds.setPixelColor(0, 0x0000FF);
+        leds.show();
+    }
+    
+    if (analogRead(lightPin) < 800 )
+    {   
+        alarm = true;
+    }
+
+    if (buttonState == HIGH)
+    {
+        alarm = false;
+    }
+
+    Serial.print(buttonState);
+    
+    digitalWrite(8, alarm);
+}
